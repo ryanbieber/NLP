@@ -82,3 +82,4 @@ get_wc_twitter <- function(user, n){
   
   return(wc)
 }
+
