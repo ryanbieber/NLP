@@ -3,6 +3,7 @@ library(tm)
 library(forecast)
 library(dplyr)
 library(data.table)
+library(rtweet)
 
 moving_sentiment_average <- function(user, n, ma = 30){
   tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
