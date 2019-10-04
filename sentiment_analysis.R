@@ -8,6 +8,7 @@ library(wordcloud2)
 library(RColorBrewer)
 library(dplyr)
 library(ggwordcloud)
+library(rtweet)
 
 ## function to make the wordcloud
 get_wc_twitter <- function(user, n){
@@ -82,4 +83,5 @@ get_wc_twitter <- function(user, n){
   
   return(wc)
 }
+
 
