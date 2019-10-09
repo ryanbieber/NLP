@@ -4,9 +4,16 @@ library(forecast)
 library(dplyr)
 library(data.table)
 library(rtweet)
+library(quantmod)
+library(ggplot2)
 
-moving_sentiment_average <- function(user, n, ma = 30){
-  tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
+moving_sentiment_average <- function(user, n, ticker=NULL, hash = FALSE, ma = 30){
+  if (hash==FALSE){
+    tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
+  } else {
+    q=user
+    tweets <- search_tweets(q , n, lang="en")
+  } 
   
   tweets$cleaned <- gsub("http.*","",  tweets$text)
   tweets$cleaned <- gsub("https.*","", tweets$cleaned)
@@ -36,15 +43,45 @@ moving_sentiment_average <- function(user, n, ma = 30){
   bin_final <- final %>%
     group_by(date) %>%
     summarize(Mean = mean(value, na.rm=TRUE))
+  bin_final$type <- "Tweets"
+  year <- tweets$year[nrow(tweets)]
+  month <- tweets$month[nrow(tweets)]
+  day <- tweets$day[nrow(tweets)]
   
-  ts <- as.ts(bin_final$Mean)
+  mamonth <- forecast::ma(bin_final$Mean,order = ma)
+  bind_final <- data.frame(date = bin_final$date, Mean = as.numeric(mamonth), type = "Tweet Moving Average")
+  bind_final$type <- as.character(bind_final$type)
+  bin_final <- as.data.frame(bin_final)
+  bin_final <- bin_final %>% mutate_each_(funs(scale(.) %>% as.vector), vars = c("Mean"))
+  bind_final <- bind_final %>% mutate_each_(funs(scale(.) %>% as.vector), vars = c("Mean"))
   
-  mamonth <- ma(ts,order = ma)
   
-  sent_plot <- print(autoplot(mamonth))
+  tweet_averge <- gtools::smartbind(bin_final, bind_final)
   
+  if (is.null(ticker)){
+    sent_plot <- ggplot(tweet_averge, aes(x=date, y=Mean, colour=type, group=type)) +
+      geom_line() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      ggtitle("Twitter sentiment value")
+  } else {
+    StockData <- new.env()
+    getSymbols(ticker, from = as.character(paste(year, month, day,sep="-")), adjust =  TRUE, env = StockData)
+    company <- StockData[[ticker]][,6]
+    company <- as.data.frame(company)
+    company <- data.frame(date = rownames(company),Mean = company[,1], type = ticker)
+    company <- company %>% mutate_each_(funs(scale(.) %>% as.vector), vars = c("Mean"))
+    
+    
+    final_bind <- gtools::smartbind(tweet_averge, company)
+    sent_plot <- ggplot(final_bind, aes(x=date, y=Mean, colour=type, group=type)) +
+      geom_line() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      ggtitle("Twitter sentiment value vs Stock Market")
+    
+  }
+    
   return(sent_plot)
 }
 
-sent_plot <- moving_sentiment_average(user, n)
+
 

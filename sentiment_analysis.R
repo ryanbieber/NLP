@@ -11,8 +11,14 @@ library(ggwordcloud)
 library(rtweet)
 
 ## function to make the wordcloud
-get_wc_twitter <- function(user, n){
-  tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
+get_wc_twitter <- function(user, n, hash = FALSE){
+  if (hash==FALSE){
+    tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
+  } else {
+    q=user
+    tweets <- search_tweets(q , n, lang="en")
+  }
+
   
   tweets$cleaned <- gsub("http.*","",  tweets$text)
   tweets$cleaned <- gsub("https.*","", tweets$cleaned)
@@ -48,14 +54,11 @@ get_wc_twitter <- function(user, n){
   }
   
   #try to do some word corrections
-  tst = list()
-  for (q in 1:length(docs_unlist)){
-    tst[[q]] <- correct(docs_unlist[q])
-    
-  }
+  tst <- lapply(docs_unlist, correct)
   
   #making the text a dataframe
   text <- data.frame(word = unlist(tst))
+  stop_words <- data.frame(word = stopwords())
   text <-  anti_join(text, stop_words)
   
   #fifnding the text count for each word and removing duplicates
@@ -83,5 +86,7 @@ get_wc_twitter <- function(user, n){
   
   return(wc)
 }
+
+get_wc_twitter("IBM", 10, hash = TRUE)
 
 
