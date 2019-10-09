@@ -67,7 +67,7 @@ moving_sentiment_average <- function(user, n, ticker=NULL, hash = FALSE, ma = 30
     sent_plot <- ggplot(final_bind, aes(x=date, y=Mean, colour=type, group=type)) +
       geom_line() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      ggtitle("Twitter sentiment value vs Stock Market")
+      ggtitle(paste(user, "Twitter Sentiment",ma, "Days Moving Average vs.", ticker, "Adjusted Value", sep = " "))
     
   }
     
