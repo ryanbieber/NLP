@@ -43,36 +43,27 @@ moving_sentiment_average <- function(user, n, ticker=NULL, hash = FALSE, ma = 30
   bin_final <- final %>%
     group_by(date) %>%
     summarize(Mean = mean(value, na.rm=TRUE))
-  bin_final$type <- "Tweets"
-  year <- tweets$year[nrow(tweets)]
-  month <- tweets$month[nrow(tweets)]
-  day <- tweets$day[nrow(tweets)]
-  
-  mamonth <- forecast::ma(bin_final$Mean,order = ma)
+  mamonth <- ma(bin_final$Mean,order = ma)
   bind_final <- data.frame(date = bin_final$date, Mean = as.numeric(mamonth), type = "Tweet Moving Average")
   bind_final$type <- as.character(bind_final$type)
-  bin_final <- as.data.frame(bin_final)
-  bin_final <- bin_final %>% mutate_each_(funs(scale(.) %>% as.vector), vars = c("Mean"))
   bind_final <- bind_final %>% mutate_each_(funs(scale(.) %>% as.vector), vars = c("Mean"))
   
   
-  tweet_averge <- gtools::smartbind(bin_final, bind_final)
-  
   if (is.null(ticker)){
-    sent_plot <- ggplot(tweet_averge, aes(x=date, y=Mean, colour=type, group=type)) +
+    sent_plot <- ggplot(bind_final, aes(x=date, y=Mean, colour=type, group=type)) +
       geom_line() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       ggtitle("Twitter sentiment value")
   } else {
     StockData <- new.env()
-    getSymbols(ticker, from = as.character(paste(year, month, day,sep="-")), adjust =  TRUE, env = StockData)
+    getSymbols(ticker, from = min(tweets$date), adjust =  TRUE, env = StockData)
     company <- StockData[[ticker]][,6]
     company <- as.data.frame(company)
-    company <- data.frame(date = rownames(company),Mean = company[,1], type = ticker)
+    company <- data.frame(date = rownames(company),Mean = as.numeric(company[,1]), type = ticker)
     company <- company %>% mutate_each_(funs(scale(.) %>% as.vector), vars = c("Mean"))
     
     
-    final_bind <- gtools::smartbind(tweet_averge, company)
+    final_bind <- gtools::smartbind(bind_final, company)
     sent_plot <- ggplot(final_bind, aes(x=date, y=Mean, colour=type, group=type)) +
       geom_line() +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -83,5 +74,11 @@ moving_sentiment_average <- function(user, n, ticker=NULL, hash = FALSE, ma = 30
   return(sent_plot)
 }
 
+user = "officialmcafee"
+n = 3200
+ticker = "BTC_USD"
+ma = 2
+
+test <- moving_sentiment_average(user, n, ticker, ma=ma)
 
 
