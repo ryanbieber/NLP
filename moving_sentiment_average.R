@@ -6,9 +6,12 @@ library(data.table)
 library(rtweet)
 library(quantmod)
 library(ggplot2)
+library(scales)
 
-moving_sentiment_average <- function(user, n, ticker=NULL, hash = FALSE, ma = 30){
-  if (hash==FALSE){
+moving_sentiment_average <- function(user, n, data=NULL, ticker=NULL, hash = FALSE, ma = 30){
+  if (!is.null(data)){
+    tweets = data
+  } else if (hash==FALSE){
     tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
   } else {
     q=user
@@ -64,8 +67,10 @@ moving_sentiment_average <- function(user, n, ticker=NULL, hash = FALSE, ma = 30
     
     
     final_bind <- gtools::smartbind(bind_final, company)
+    final_bind$date <- as.Date(final_bind$date)
     sent_plot <- ggplot(final_bind, aes(x=date, y=Mean, colour=type, group=type)) +
       geom_line() +
+      scale_x_date(breaks = pretty_breaks(10))+
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       ggtitle(paste(user, "Twitter Sentiment",ma, "Days Moving Average vs.", ticker, "Adjusted Value", sep = " "))
     
@@ -76,9 +81,12 @@ moving_sentiment_average <- function(user, n, ticker=NULL, hash = FALSE, ma = 30
 
 user = "officialmcafee"
 n = 3200
-ticker = "BTC_USD"
-ma = 2
+ticker = "IBM"
+ma = 10
+data <- get_timelines(user = user, n=n, include_rts = FALSE)
+test <- moving_sentiment_average(user, n, ticker, data = data, ma=ma)
 
-test <- moving_sentiment_average(user, n, ticker, ma=ma)
-
+data1 <- get_timelines("realDonaldTrump", n=n, include_rts = FALSE, retryonlimit = TRUE)
+test <- moving_sentiment_average(user = "realDonaldTrump", n=n, ticker = "SPY", data = data1, ma=ma)
+test
 
