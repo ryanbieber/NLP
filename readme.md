@@ -209,8 +209,15 @@ Initilize these packages much like the other function
 
 ```{r, echo=FALSE}
 
-moving_sentiment_average <- function(user, n, ma = 30){
-  tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
+moving_sentiment_average <- function(user, n, data=NULL, ticker=NULL, hash = FALSE, ma = 30){
+  if (!is.null(data)){
+    tweets = data
+  } else if (hash==FALSE){
+    tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
+  } else {
+    q=user
+    tweets <- search_tweets(q , n, lang="en")
+  } 
   
   tweets$cleaned <- gsub("http.*","",  tweets$text)
   tweets$cleaned <- gsub("https.*","", tweets$cleaned)
@@ -240,13 +247,36 @@ moving_sentiment_average <- function(user, n, ma = 30){
   bin_final <- final %>%
     group_by(date) %>%
     summarize(Mean = mean(value, na.rm=TRUE))
+  mamonth <- ma(bin_final$Mean,order = ma)
+  bind_final <- data.frame(date = bin_final$date, Mean = as.numeric(mamonth), type = "Tweet Moving Average")
+  bind_final$type <- as.character(bind_final$type)
+  bind_final <- bind_final %>% mutate_each_(funs(scale(.) %>% as.vector), vars = c("Mean"))
   
-  ts <- as.ts(bin_final$Mean)
   
-  mamonth <- ma(ts,order = ma)
-  
-  sent_plot <- print(autoplot(mamonth))
-  
+  if (is.null(ticker)){
+    sent_plot <- ggplot(bind_final, aes(x=date, y=Mean, colour=type, group=type)) +
+      geom_line() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      ggtitle("Twitter sentiment value")
+  } else {
+    StockData <- new.env()
+    getSymbols(ticker, from = min(tweets$date), adjust =  TRUE, env = StockData)
+    company <- StockData[[ticker]][,6]
+    company <- as.data.frame(company)
+    company <- data.frame(date = rownames(company),Mean = as.numeric(company[,1]), type = ticker)
+    company <- company %>% mutate_each_(funs(scale(.) %>% as.vector), vars = c("Mean"))
+    
+    
+    final_bind <- gtools::smartbind(bind_final, company)
+    final_bind$date <- as.Date(final_bind$date)
+    sent_plot <- ggplot(final_bind, aes(x=date, y=Mean, colour=type, group=type)) +
+      geom_line() +
+      scale_x_date(breaks = pretty_breaks(10))+
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      ggtitle(paste(user, "Twitter Sentiment",ma, "Days Moving Average vs.", ticker, "Adjusted Value", sep = " "))
+    
+  }
+    
   return(sent_plot)
 }
 ```

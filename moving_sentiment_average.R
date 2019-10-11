@@ -6,7 +6,7 @@ library(data.table)
 library(rtweet)
 library(quantmod)
 library(ggplot2)
-library(scales)
+
 
 moving_sentiment_average <- function(user, n, data=NULL, ticker=NULL, hash = FALSE, ma = 30){
   if (!is.null(data)){
