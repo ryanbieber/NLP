@@ -71,8 +71,13 @@ long4 <-  anti_join(long3, stop_words)
 ## pairwise counting words and changing them back to factor to be used in plot
 tweet_pairs <- long4 %>%
   pairwise_count(word,uni_id,sort=TRUE,upper=FALSE)
-tweet_pairs$item1 <- as.factor(tweet_pairs$item1)
-tweet_pairs$item2 <- as.factor(tweet_pairs$item2)
+
+## word n plot
+tweet_pairs %>% filter(n >15) %>% 
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") + 
+  geom_edge_link(aes(color = n, width = n)) + geom_node_point() + 
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
 
 ## word correlation
 word_phi <- long4 %>% 
@@ -81,15 +86,10 @@ word_phi <- long4 %>%
   pairwise_cor(word, uni_id, sort = TRUE)
 
 ## word correlation plot
-tweet_pairs %>% filter(n >15) %>% 
-  graph_from_data_frame() %>%
-  ggraph(layout = "fr") + 
-  geom_edge_link(aes(color = n, width = n)) + geom_node_point() + 
-  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
-
-## word correlation plot
 word_phi %>% filter(correlation > .01) %>% 
   graph_from_data_frame() %>%
   ggraph(layout = "fr") + 
-  geom_edge_link(aes(color = correlation, width = correlation)) + geom_node_point() + 
-  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+  geom_edge_link(aes(color = correlation , width = correlation)) + geom_node_point() + 
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1, colour = "red", check_overlap = FALSE)
+
+
