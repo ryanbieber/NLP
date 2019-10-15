@@ -6,6 +6,8 @@ library(data.table)
 library(rtweet)
 library(quantmod)
 library(ggplot2)
+library(data.table)
+library(scales)
 
 
 moving_sentiment_average <- function(user, n, data=NULL, ticker=NULL, hash = FALSE, ma = 30){
@@ -79,14 +81,7 @@ moving_sentiment_average <- function(user, n, data=NULL, ticker=NULL, hash = FAL
   return(sent_plot)
 }
 
-user = "officialmcafee"
-n = 3200
-ticker = "IBM"
-ma = 10
-data <- get_timelines(user = user, n=n, include_rts = FALSE)
-test <- moving_sentiment_average(user, n, ticker, data = data, ma=ma)
 
-data1 <- get_timelines("realDonaldTrump", n=n, include_rts = FALSE, retryonlimit = TRUE)
-test <- moving_sentiment_average(user = "realDonaldTrump", n=n, ticker = "SPY", data = data1, ma=ma)
+test <- moving_sentiment_average(user = "realDonaldTrump", n=201, ticker = "SPY", data = data, ma=2)
 test
 

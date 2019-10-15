@@ -10,9 +10,13 @@ library(dplyr)
 library(ggwordcloud)
 library(rtweet)
 
+data <- get_timeline("realDonaldTrump", n=3200)
+
 ## function to make the wordcloud
-get_wc_twitter <- function(user, n, hash = FALSE){
-  if (hash==FALSE){
+get_wc_twitter <- function(user, n, data = NULL, hash = FALSE){
+  if (!is.null(data)){
+    tweets = data
+  } else if (hash==FALSE){
     tweets <- get_timelines(user = user, n=n, include_rts = FALSE)
   } else {
     q=user
@@ -73,11 +77,13 @@ get_wc_twitter <- function(user, n, hash = FALSE){
   m4 <- subset(m3,!is.na(m3$sentiment))
   
   ## making the wordcloud
+  m4 <- m4 %>%
+    mutate(angle = 90 * sample(c(0, 1), n(), replace = TRUE, prob = c(60, 40)))
   set.seed(1337)
   wc <- ggplot(
     m4,
     aes(
-      label = word, size = Freq, colour = as.factor(m4$sentiment)
+      label = word, size = Freq, colour = as.factor(m4$sentiment), angle = angle
     )
   ) +
     geom_text_wordcloud_area() +
@@ -87,6 +93,6 @@ get_wc_twitter <- function(user, n, hash = FALSE){
   return(wc)
 }
 
-get_wc_twitter("IBM", 10, hash = TRUE)
+get_wc_twitter("realDonaldTrump", 201, data = data)
 
 
