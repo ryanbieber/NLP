@@ -7,6 +7,7 @@ library(ggplot2)
 library(igraph)
 library(ggraph)
 library(stopwords)
+library(tm)
 
 ## tweets are stored in a global variable from other problems in data
 
